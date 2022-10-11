@@ -32,7 +32,8 @@ on:
 
 env:
   AWS_REGION: ap-northeast-1                   # set this to your preferred AWS region, e.g. us-west-1
-  ECR_REPOSITORY: githubactions-nginx           # set this to your Amazon ECR repository name
+  ECR_REPOSITORY_1: githubactions-nginx-1           # set this to your Amazon ECR repository name
+  ECR_REPOSITORY_2: githubactions-nginx-2           # set this to your Amazon ECR repository name
   ECS_SERVICE: test-ecr-service                 # set this to your Amazon ECS service name
   ECS_CLUSTER: john-ecs                 # set this to your Amazon ECS cluster name
   ECS_TASK_DEFINITION: task-definition.json # set this to the path to your Amazon ECS task definition
@@ -72,9 +73,9 @@ jobs:
         # Build a docker container and
         # push it to ECR so that it can
         # be deployed to ECS.
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f nginx1/Dockerfile nginx1
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_1:$IMAGE_TAG -f nginx1/Dockerfile nginx1
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_1:$IMAGE_TAG
+        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_1:$IMAGE_TAG"
   build2:
     name: build2
     runs-on: ubuntu-latest
@@ -102,9 +103,9 @@ jobs:
         # Build a docker container and
         # push it to ECR so that it can
         # be deployed to ECS.
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f nginx2/Dockerfile nginx2
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_2:$IMAGE_TAG -f nginx2/Dockerfile nginx2
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_2:$IMAGE_TAG
+        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_2:$IMAGE_TAG"
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
