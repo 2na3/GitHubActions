@@ -37,18 +37,18 @@ env:
   ECS_CLUSTER: john-ecs                 # set this to your Amazon ECS cluster name
   ECS_TASK_DEFINITION: task-definition.json # set this to the path to your Amazon ECS task definition
                                                # file, e.g. .aws/task-definition.json
-  CONTAINER_NAME: nginx           # set this to the name of the container in the
+  CONTAINER_NAME_1: nginx1           # set this to the name of the container in the
+  CONTAINER_NAME_2: nginx2           # set this to the name of the container in the
                                                # containerDefinitions section of your task definition
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Deploy
+  build1:
+    name: build1
     runs-on: ubuntu-latest
     environment: test-production
-
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -65,7 +65,7 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
 
     - name: Build, tag, and push image to Amazon ECR
-      id: build-image
+      id: build-image-1
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
@@ -73,22 +73,81 @@ jobs:
         # Build a docker container and
         # push it to ECR so that it can
         # be deployed to ECS.
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f nginx1/Dockerfile nginx1
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+  build2:
+    name: build2
+    runs-on: ubuntu-latest
+    environment: test-production
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
 
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image-1
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        # Build a docker container and
+        # push it to ECR so that it can
+        # be deployed to ECS.
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f nginx2/Dockerfile nginx2
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: test-production
+    needs: [build1, build2]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Fill in the new image ID in the Amazon ECS task definition for Nginx1
+      id: task-def-nginx1
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
         task-definition: ${{ env.ECS_TASK_DEFINITION }}
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ steps.build-image.outputs.image }}
+        container-name: ${{ env.CONTAINER_NAME_1 }}
+        image: ${{ steps.build-image-1.outputs.image }}
+
+    - name: Fill in the new image ID in the Amazon ECS task definition for Nginx2
+      id: task-def-nginx2
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def-nginx1.outputs.task-definition }}
+        container-name: ${{ env.CONTAINER_NAME_2 }}
+        image: ${{ steps.build-image-2.outputs.image }}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        task-definition: ${{ steps.task-def-nginx2.outputs.task-definition }}
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
