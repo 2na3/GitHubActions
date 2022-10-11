@@ -75,7 +75,7 @@ jobs:
         # be deployed to ECS.
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_1:$IMAGE_TAG -f nginx1/Dockerfile nginx1
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_1:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_1:$IMAGE_TAG"
+        echo "::set-output name=image::$ECR_REPOSITORY_1:$IMAGE_TAG"
   build2:
     name: build2
     runs-on: ubuntu-latest
@@ -98,14 +98,14 @@ jobs:
       id: build-image-1
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: latest
       run: |
         # Build a docker container and
         # push it to ECR so that it can
         # be deployed to ECS.
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_2:$IMAGE_TAG -f nginx2/Dockerfile nginx2
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_2:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY_2:$IMAGE_TAG"
+        echo "::set-output name=image::$ECR_REPOSITORY_2:$IMAGE_TAG"
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
