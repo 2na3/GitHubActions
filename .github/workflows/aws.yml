@@ -132,7 +132,7 @@ jobs:
       with:
         task-definition: ${{ env.ECS_TASK_DEFINITION }}
         container-name: ${{ env.CONTAINER_NAME_1 }}
-        image: ${{ needs.build1.outputs.image }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.build1.outputs.image }}
 
     - name: Fill in the new image ID in the Amazon ECS task definition for Nginx2
       id: task-def-nginx2
@@ -140,7 +140,7 @@ jobs:
       with:
         task-definition: ${{ steps.task-def-nginx1.outputs.task-definition }}
         container-name: ${{ env.CONTAINER_NAME_2 }}
-        image: ${{ needs.build2.outputs.image }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ needs.build2.outputs.image }}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
