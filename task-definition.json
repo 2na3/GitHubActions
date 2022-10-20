@@ -5,6 +5,14 @@
       {
         "name": "nginx1",
         "image": "nginx",
+        "logConfiguration": { 
+          "logDriver": "awslogs",
+          "options": { 
+             "awslogs-group" : "/ecs/fargate-task-definition-nginx1",
+             "awslogs-region": "ap-northeast-1",
+             "awslogs-stream-prefix": "ecs"
+          }
+       },
         "portMappings": [
           {
             "containerPort": 80,
@@ -17,6 +25,14 @@
       {
         "name": "nginx2",
         "image": "nginx",
+        "logConfiguration": { 
+          "logDriver": "awslogs",
+          "options": { 
+             "awslogs-group" : "/ecs/fargate-task-definition-nginx2",
+             "awslogs-region": "ap-northeast-1",
+             "awslogs-stream-prefix": "ecs"
+          }
+       },
         "portMappings": [
           {
             "containerPort": 8080,
